@@ -9,13 +9,17 @@ class BlogsController < ApplicationController
     @blogs = Blog.search(params[:term]).published.default_order
   end
 
-  def show; end
+  def show
+    redirect_to blogs_url if @blog.secret? && !@blog.owned_by?(current_user)
+  end
 
   def new
     @blog = Blog.new
   end
 
-  def edit; end
+  def edit
+    redirect_to blog_url(@blog) unless @blog.owned_by?(current_user)
+  end
 
   def create
     @blog = current_user.blogs.new(blog_params)
@@ -48,6 +52,10 @@ class BlogsController < ApplicationController
   end
 
   def blog_params
-    params.require(:blog).permit(:title, :content, :secret, :random_eyecatch)
+    if current_user.premium
+      params.require(:blog).permit(:title, :content, :secret, :random_eyecatch)
+    else
+      params.require(:blog).permit(:title, :content, :secret)
+    end
   end
 end
